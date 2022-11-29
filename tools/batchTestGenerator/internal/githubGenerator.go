@@ -4,6 +4,7 @@ import (
 	"container/ring"
 	"encoding/json"
 	"fmt"
+	"os"
 )
 
 // generates the batch keys and value json for github action utilization
@@ -42,11 +43,13 @@ func GithubGenerator(config RunConfig) error {
 		return fmt.Errorf("failed to marshal batch values object: %w", err)
 	}
 
+testmap:
 	fmt.Println(`batch-keys=%s > $GITHUB_OUTPUT`, githubBatchKeys)
 	fmt.Printf("\n")
 	fmt.Println(`batch-values=%s > $GITHUB_OUTPUT`, githubBatchValues)
 	fmt.Printf("\n")
-	fmt.Printf("%s uses %s\n", os.Getenv("GITHUB_OUTPUT"))
+	fmt.Printf(" Getting the env variable %s \n", os.Setenv("GITHUB_OUTPUT", githubBatchKeys))
+	fmt.Printf(" Getting the env variable %s \n", os.Getenv("GITHUB_OUTPUT"))
 
 	return nil
 
