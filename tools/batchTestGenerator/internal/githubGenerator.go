@@ -46,6 +46,7 @@ func GithubGenerator(config RunConfig) error {
 	fmt.Printf("\n")
 	fmt.Println(`batch-values=%s > $GITHUB_OUTPUT`, githubBatchValues)
 	fmt.Printf("\n")
+	fmt.Printf("%s uses %s\n", os.Getenv("GITHUB_OUTPUT"))
 
 	return nil
 
