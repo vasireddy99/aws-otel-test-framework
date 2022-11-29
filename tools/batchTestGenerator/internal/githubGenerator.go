@@ -49,7 +49,7 @@ func GithubGenerator(config RunConfig) error {
 	fmt.Printf("\n")
 	fmt.Printf(`batch-keys=%s >> $GITHUB_OUTPUT`, githubBatchKeys)
 	fmt.Sprintf("batch-keys=%s >> $GITHUB_OUTPUT", githubBatchKeys)
-	os.Setenv("GITHUB_OUTPUT" , "[batch-keys]: 1" )
+	os.Setenv("GITHUB_OUTPUT" , "batch-keys:1" )
 	fmt.Printf(" Getting the env variable %s \n", os.Getenv("GITHUB_OUTPUT"))
 
 	return nil
