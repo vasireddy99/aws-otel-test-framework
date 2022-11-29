@@ -43,14 +43,13 @@ func GithubGenerator(config RunConfig) error {
 		return fmt.Errorf("failed to marshal batch values object: %w", err)
 	}
 
-	fmt.Println(`batch-keys=%s > $GITHUB_OUTPUT`, githubBatchKeys)
+	fmt.Printf(`batch-keys=%s >> $GITHUB_OUTPUT`, githubBatchKeys)
 	fmt.Printf("\n")
-	fmt.Println(`batch-values=%s > $GITHUB_OUTPUT`, githubBatchValues)
+	fmt.Printf(`batch-values=%s >> $GITHUB_OUTPUT`, githubBatchValues)
 	fmt.Printf("\n")
 	fmt.Printf(`batch-keys=%s >> $GITHUB_OUTPUT`, githubBatchKeys)
 	fmt.Sprintf("batch-keys=%s >> $GITHUB_OUTPUT", githubBatchKeys)
-	testing := fmt.Printf("batch-keys=%s", githubBatchKeys)
-	fmt.Printf(" Getting the env variable %s \n", os.Setenv(testing, "GITHUB_OUTPUT"))
+	os.Setenv("GITHUB_OUTPUT" , "[batch-keys]: 1" )
 	fmt.Printf(" Getting the env variable %s \n", os.Getenv("GITHUB_OUTPUT"))
 
 	return nil
