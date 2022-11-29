@@ -3,6 +3,7 @@ package internal
 import (
 	"container/ring"
 	"encoding/json"
+	"os/exec"
 	"fmt"
 	"os"
 )
@@ -47,10 +48,14 @@ func GithubGenerator(config RunConfig) error {
 	fmt.Printf("\n")
 	fmt.Printf(`batch-values=%s >> $GITHUB_OUTPUT`, githubBatchValues)
 	fmt.Printf("\n")
-	fmt.Printf(`batch-keys=%s >> $GITHUB_OUTPUT`, githubBatchKeys)
-	fmt.Sprintf("batch-keys=%s >> $GITHUB_OUTPUT", githubBatchKeys)
-	os.Setenv("GITHUB_OUTPUT" , "batch-keys=1" )
-	fmt.Printf(" Getting the env variable %s \n", os.Getenv("GITHUB_OUTPUT"))
+	sh := os.Getenv("GITHUB_OUTPUT")
+	cmd := exec.Command(sh, "-c ", `batch-keys >> GITHUB_OUTPUT`)
+	//cmd.Stdout = os.Stdout
+	cmd.Run()
+	//fmt.Fprintln(os.Stdout, `batch-values &> GITHUB_OUTPUT`)
+	//fmt.Printf(`batch-keys=%s >> $GITHUB_OUTPUT`, githubBatchKeys)
+	//os.Setenv("GITHUB_OUTPUT" , "batch-keys=1" )
+	fmt.Printf(" Getting the env variable \n", os.Getenv("GITHUB_OUTPUT"))
 
 	return nil
 
