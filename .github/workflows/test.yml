@@ -10,33 +10,34 @@ on:
 
   workflow_dispatch:
 
-get-testing-suites:
-  runs-on: ubuntu-latest
-  outputs:
-    test-case-batch-key: ${{ steps.set-batches.outputs.batch-keys }}
-    test-case-batch-value: ${{ steps.set-batches.outputs.batch-values }}
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-      with:
-        ref: test-setOutput
+jobs:
+  get-testing-suites:
+    runs-on: ubuntu-latest
+    outputs:
+      test-case-batch-key: ${{ steps.set-batches.outputs.batch-keys }}
+      test-case-batch-value: ${{ steps.set-batches.outputs.batch-values }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: test-setOutput
 
-    - name: Set up Go 1.x
-      uses: actions/setup-go@v3
-      with:
-        go-version: 1.19.1
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.1
 
-      # getting the batches would look something like this
-      # max jobs could be read as env or passed in as arg depending
-      # on how tool is written.
-    - name: Create test batch key values
-      id: set-batches
-      run: |
-        cd aws-otel-test-framework/tools/batchTestGenerator
-        go build
-        ./batchTestGenerator github --testCaseFilePath=./testcases.json --maxBatch=2 \
-          --include=EKS
-    - name: List testing suites
-      run: |
-        echo ${{ steps.set-batches.outputs.batch-keys }}
-        echo ${{ steps.set-batches.outputs.batch-values }}
+        # getting the batches would look something like this
+        # max jobs could be read as env or passed in as arg depending
+        # on how tool is written.
+      - name: Create test batch key values
+        id: set-batches
+        run: |
+          cd aws-otel-test-framework/tools/batchTestGenerator
+          go build
+          ./batchTestGenerator github --testCaseFilePath=./testcases.json --maxBatch=2 \
+            --include=EKS
+      - name: List testing suites
+        run: |
+          echo ${{ steps.set-batches.outputs.batch-keys }}
+          echo ${{ steps.set-batches.outputs.batch-values }}
