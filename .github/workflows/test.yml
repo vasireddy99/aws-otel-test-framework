@@ -33,7 +33,7 @@ jobs:
       - name: Create test batch key values
         id: set-batches
         run: |
-          cd aws-otel-test-framework/tools/batchTestGenerator
+          cd tools/batchTestGenerator
           go build
           ./batchTestGenerator github --testCaseFilePath=./testcases.json --maxBatch=2 \
             --include=EKS
