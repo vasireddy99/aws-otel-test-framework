@@ -6,7 +6,6 @@ on:
       - release/v*
       - dev
       - testSet
-      - test-setOutput
 
   workflow_dispatch:
 
@@ -36,7 +35,7 @@ jobs:
           cd tools/batchTestGenerator
           go build
           ./batchTestGenerator github --testCaseFilePath=./testcases.json --maxBatch=2 \
-            --include=EKS,ECS
+            --include=EKS
           >> $GITHUB_OUTPUT
       - name: List testing suites
         run: |
