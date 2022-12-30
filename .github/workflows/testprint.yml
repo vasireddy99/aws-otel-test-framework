@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          ref: test-setOutput
+          ref: testSet
 
       - name: Set up Go 1.x
         uses: actions/setup-go@v3
