@@ -39,5 +39,5 @@ jobs:
             --include=EKS,ECS
       - name: List testing suites
         run: |
-          echo ${{ env.batch-keys }}
-          echo ${{ env.batch-values }}
+          echo ${{ steps.set-batches.outputs.batch-keys }}
+          echo ${{ steps.set-batches.outputs.batch-values }}
