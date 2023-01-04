@@ -44,7 +44,7 @@ func GithubGenerator(config RunConfig) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal batch values object: %w", err)
 	}
-	ghOutputFile := os.Getenv("GITHUB_OUTPUT")
+	//ghOutputFile := os.Getenv("GITHUB_OUTPUT")
 	ghOutputFile1, err := os.OpenFile(ghOutputFile, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		log.Fatal(err)
