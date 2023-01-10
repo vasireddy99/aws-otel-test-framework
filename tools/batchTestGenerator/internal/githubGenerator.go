@@ -51,13 +51,13 @@ func GithubGenerator(config RunConfig) error {
 		log.Fatal(err)
 	}
 	defer ghEnv.Close()
-
-	_, err = ghEnv.WriteString(fmt.Sprintf(`batch-keys=%s`, '\n', githubBatchKeys))
+	text := fmt.Sprintf(`batch-keys=%s\n`, githubBatchKeys)
+	_, err = ghEnv.WriteString(fmt.Printf(`%s\n`, text))
 	if err != nil {
 		fmt.Printf("error writing githubBatchKeys in GITHUB_OUTPUT env: %v", err)
 	}
-
-	_, err = ghEnv.WriteString(fmt.Sprintf(`batch-values=%s`, '\n', githubBatchValues))
+	text1 := fmt.Sprintf(`batch-keys=%s\n`, githubBatchValues)
+	_, err = ghEnv.WriteString(fmt.Printf(`%s\n`, text1))
 	if err != nil {
 		fmt.Printf("error writing githubBatchValues in GITHUB_OUTPUT env: %v", err)
 	}
