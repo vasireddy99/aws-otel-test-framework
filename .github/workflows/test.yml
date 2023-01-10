@@ -35,8 +35,8 @@ jobs:
         run: |
           cd tools/batchTestGenerator
           go build
-          ./batchTestGenerator github --testCaseFilePath=./testcases.json --maxBatch=2 \
-            --include=EKS,ECS
+          ./batchTestGenerator github --testCaseFilePath=./testcases.json --maxBatch=90 \
+            --include=EKS,ECS,EC2,EKS_ARM64,EKS_FARGATE
       - name: List testing suites
         run: |
           echo ${{ steps.set-batches.outputs.batch-keys }}
