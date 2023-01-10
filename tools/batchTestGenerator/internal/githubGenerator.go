@@ -48,13 +48,15 @@ func GithubGenerator(config RunConfig) error {
 	ghOutputFile := os.Getenv("GITHUB_OUTPUT")
 	ghEnv, err := os.OpenFile(ghOutputFile, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Could not open GITHUB_OUTPUT env file")
+		return err
 	}
 	defer ghEnv.Close()
 
+	//Writing into the gh env fie
 	_, err = ghEnv.WriteString(fmt.Sprintf("batch-keys=%s\n", githubBatchKeys))
 	if err != nil {
-		fmt.Printf("error writing githubBatchKeys in GITHUB_OUTPUT env: %v", err)
+		return fmt.Errorf("error writing githubBatchKeys in GITHUB_OUTPUT env: %v", err)
 	}
 
 	_, err = ghEnv.WriteString(fmt.Sprintf("batch-values=%s\n", githubBatchValues))
