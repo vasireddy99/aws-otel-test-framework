@@ -22,6 +22,7 @@ module "common" {
 }
 
 module "basic_components" {
+  count = 4
   source = "../basic_components"
 
   region = var.region
@@ -41,7 +42,7 @@ module "basic_components" {
 
   cortex_instance_endpoint = var.cortex_instance_endpoint
 
-  sample_app_listen_address_host = aws_instance.sidecar.public_ip
+  sample_app_listen_address_host = aws_instance.sidecar[count.index].public_ip
 
   sample_app_listen_address_port = module.common.sample_app_lb_port
 
@@ -85,6 +86,7 @@ locals {
 
 ## launch a sidecar instance to install data emitter and the mocked server
 resource "aws_instance" "sidecar" {
+  count                       = 4
   ami                         = data.aws_ami.amazonlinux2.id
   instance_type               = var.sidecar_instance_type
   subnet_id                   = module.basic_components.random_subnet_instance_id
@@ -140,11 +142,11 @@ resource "null_resource" "check_patch" {
   depends_on = [
     aws_instance.aoc,
   aws_instance.sidecar]
-  count = var.patch ? 1 : 0
+  count = var.patch ? 4 : 0
 
   # https://discuss.hashicorp.com/t/how-to-rewrite-null-resource-with-local-exec-provisioner-when-destroy-to-prepare-for-deprecation-after-0-12-8/4580/2
   triggers = {
-    sidecar_id = aws_instance.sidecar.id
+    sidecar_id = aws_instance.sidecar[count.index].id
     aoc_id     = aws_instance.aoc.id
     aotutil    = var.aotutil
   }
@@ -181,7 +183,7 @@ resource "null_resource" "setup_mocked_server_cert_for_windows" {
 
   provisioner "remote-exec" {
     inline = [
-      "echo ${aws_instance.sidecar.private_ip} mocked-server >> C:\\Windows\\System32\\drivers\\etc\\hosts",
+      "echo ${aws_instance.sidecar[count.index].private_ip} mocked-server >> C:\\Windows\\System32\\drivers\\etc\\hosts",
       "powershell \"Import-Certificate -FilePath 'C:\\ca-bundle.crt' -CertStoreLocation 'Cert:\\LocalMachine\\Root' -Verbose \""
     ]
 
@@ -216,7 +218,7 @@ resource "null_resource" "setup_mocked_server_cert_for_linux" {
       "sudo chmod 777 /etc/pki/tls/certs/ca-bundle.crt",
       "sudo cp /tmp/ca-bundle.crt /etc/pki/tls/certs/ca-bundle.crt",
       "sudo chmod 777 /etc/hosts",
-      "sudo echo '${aws_instance.sidecar.private_ip} mocked-server' >> /etc/hosts",
+      "sudo echo '${aws_instance.sidecar[count.index].private_ip} mocked-server' >> /etc/hosts",
     ]
 
     connection {
@@ -369,7 +371,7 @@ resource "null_resource" "setup_sample_app_and_mock_server" {
       type        = "ssh"
       user        = "ec2-user"
       private_key = local.private_key_content
-      host        = aws_instance.sidecar.public_ip
+      host        = aws_instance.sidecar[count.index].public_ip
     }
   }
   provisioner "remote-exec" {
@@ -381,7 +383,7 @@ resource "null_resource" "setup_sample_app_and_mock_server" {
       "sudo curl -L 'https://github.com/docker/compose/releases/download/1.27.4/docker-compose-Linux-x86_64' -o /usr/local/bin/docker-compose",
       "sudo chmod +x /usr/local/bin/docker-compose",
       "sudo `aws ecr get-login --no-include-email --region ${var.region}`",
-      "sleep 30", // sleep 30s to wait until dockerd is totally set up
+      "sleep 90", // sleep 30s to wait until dockerd is totally set up
       "sudo /usr/local/bin/docker-compose -f /tmp/docker-compose.yml up -d"
     ]
 
@@ -389,7 +391,7 @@ resource "null_resource" "setup_sample_app_and_mock_server" {
       type        = "ssh"
       user        = "ec2-user"
       private_key = local.private_key_content
-      host        = aws_instance.sidecar.public_ip
+      host        = aws_instance.sidecar[count.index].public_ip
     }
   }
 }
@@ -459,8 +461,8 @@ module "validator" {
   region                       = var.region
   testing_id                   = module.common.testing_id
   metric_namespace             = "${module.common.otel_service_namespace}/${module.common.otel_service_name}"
-  sample_app_endpoint          = "http://${aws_instance.sidecar.public_ip}:${module.common.sample_app_lb_port}"
-  mocked_server_validating_url = "http://${aws_instance.sidecar.public_ip}/check-data"
+  sample_app_endpoint          = "http://${aws_instance.sidecar[count.index].public_ip}:${module.common.sample_app_lb_port}"
+  mocked_server_validating_url = "http://${aws_instance.sidecar[count.index].public_ip}/check-data"
   canary                       = var.canary
   testcase                     = split("/", var.testcase)[2]
   cortex_instance_endpoint     = var.cortex_instance_endpoint
@@ -511,6 +513,10 @@ resource "null_resource" "ssm_canary_metrics" {
 
 output "public_ip" {
   value = aws_instance.aoc.public_ip
+}
+
+output "sample_app_public_ip" {
+  value = aws_instance.sidecar.*.public_ip
 }
 
 output "docker_compose" {

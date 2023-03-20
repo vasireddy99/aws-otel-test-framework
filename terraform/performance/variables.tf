@@ -52,7 +52,7 @@ variable "sshkey_s3_private_key" {
 
 # Duration to run performance test and collect metrics (in minutes)
 variable "collection_period" {
-  default = 10
+  default = 2
 }
 
 variable "commit_id" {
