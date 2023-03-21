@@ -34,6 +34,7 @@ variable "install_package_source" {
 # use this parameter when install_package_source is local
 variable "install_package_local_path" {
   default = "../../../aws-otel-collector/build/packages/linux/amd64/aws-otel-collector.rpm"
+//  default="../prometheus-agent.rpm"
 }
 
 # if ssh_key_name is empty, we create private key every time we create instance.

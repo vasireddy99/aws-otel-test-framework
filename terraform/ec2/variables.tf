@@ -130,3 +130,7 @@ variable "enable_ssm_validate" {
   type    = bool
   default = false
 }
+
+variable "sample_app_instances"{
+  default = 4
+}

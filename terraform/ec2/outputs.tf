@@ -38,5 +38,5 @@ output "testing_id" {
 }
 
 output "otconfig_content" {
-  value = module.basic_components.otconfig_content
+  value = module.basic_components[0].otconfig_content
 }

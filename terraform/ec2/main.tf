@@ -22,7 +22,7 @@ module "common" {
 }
 
 module "basic_components" {
-  count = 4
+  count = var.sample_app_instances
   source = "../basic_components"
 
   region = var.region
@@ -74,7 +74,7 @@ locals {
   download_command     = format(local.ami_family["download_command_pattern"], "https://${var.package_s3_bucket}.s3.amazonaws.com/${local.selected_ami["os_family"]}/${local.selected_ami["arch"]}/${var.aoc_version}/${local.ami_family["install_package"]}")
 
   sample_app_image    = var.sample_app_image != "" ? var.sample_app_image : module.basic_components.sample_app_image
-  mocked_server_image = var.mocked_server_image != "" ? var.mocked_server_image : module.basic_components.mocked_server_image
+  mocked_server_image = var.mocked_server_image != "" ? var.mocked_server_image : module.basic_components[0].mocked_server_image
 
   # get ecr login domain
   ecr_login_domain = split("/", data.aws_ecr_repository.sample_app.repository_url)[0]
@@ -86,11 +86,11 @@ locals {
 
 ## launch a sidecar instance to install data emitter and the mocked server
 resource "aws_instance" "sidecar" {
-  count                       = 4
+  count                       = var.sample_app_instances
   ami                         = data.aws_ami.amazonlinux2.id
   instance_type               = var.sidecar_instance_type
-  subnet_id                   = module.basic_components.random_subnet_instance_id
-  vpc_security_group_ids      = [module.basic_components.aoc_security_group_id]
+  subnet_id                   = module.basic_components[0].random_subnet_instance_id
+  vpc_security_group_ids      = [module.basic_components[0].aoc_security_group_id]
   associate_public_ip_address = true
   iam_instance_profile        = module.common.aoc_iam_role_name
   key_name                    = local.ssh_key_name
@@ -116,8 +116,8 @@ resource "aws_instance" "sidecar" {
 resource "aws_instance" "aoc" {
   ami                         = local.ami_id
   instance_type               = local.instance_type
-  subnet_id                   = module.basic_components.random_subnet_instance_id
-  vpc_security_group_ids      = [module.basic_components.aoc_security_group_id]
+  subnet_id                   = module.basic_components[0].random_subnet_instance_id
+  vpc_security_group_ids      = [module.basic_components[0].aoc_security_group_id]
   associate_public_ip_address = true
   iam_instance_profile        = module.common.aoc_iam_role_name
   key_name                    = local.ssh_key_name
@@ -142,7 +142,7 @@ resource "null_resource" "check_patch" {
   depends_on = [
     aws_instance.aoc,
   aws_instance.sidecar]
-  count = var.patch ? 4 : 0
+  count = var.patch ? var.sample_app_instances : 0
 
   # https://discuss.hashicorp.com/t/how-to-rewrite-null-resource-with-local-exec-provisioner-when-destroy-to-prepare-for-deprecation-after-0-12-8/4580/2
   triggers = {
@@ -200,7 +200,7 @@ resource "null_resource" "setup_mocked_server_cert_for_linux" {
   depends_on = [null_resource.check_patch]
   count      = local.selected_ami["family"] != "windows" ? 1 : 0
   provisioner "file" {
-    content     = module.basic_components.mocked_server_cert_content
+    content     = module.basic_components[0].mocked_server_cert_content
     destination = "/tmp/ca-bundle.crt"
 
     connection {
@@ -275,7 +275,7 @@ resource "null_resource" "start_collector" {
   # either getting the install package from s3 or from local
   depends_on = [null_resource.download_collector_from_local, null_resource.download_collector_from_s3]
   provisioner "file" {
-    content     = module.basic_components.otconfig_content
+    content     = module.basic_components[0].otconfig_content
     destination = local.otconfig_destination
 
     connection {
