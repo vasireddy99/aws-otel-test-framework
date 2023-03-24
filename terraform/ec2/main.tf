@@ -353,6 +353,7 @@ data "template_file" "docker_compose" {
     grpc_endpoint                  = "${aws_instance.aoc.private_ip}:${module.common.grpc_port}"
     udp_endpoint                   = "${aws_instance.aoc.private_ip}:${module.common.udp_port}"
     http_endpoint                  = "${aws_instance.aoc.private_ip}:${module.common.http_port}"
+    sample_app_instance_id         = aws_instance.sidecar[0].id
 
     mocked_server_image = local.mocked_server_image
     data_mode           = var.soaking_data_mode

@@ -132,5 +132,5 @@ variable "enable_ssm_validate" {
 }
 
 variable "sample_app_instances"{
-  default = 4
+  default = 1
 }

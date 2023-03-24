@@ -56,3 +56,7 @@ variable "debug" {
   type    = bool
   default = false
 }
+
+variable "sample_app_instance_id" {
+  default = ""
+}
