@@ -11,13 +11,10 @@ services:
           memory: 1G
   ot-metric-emitter:
     privileged: true
-    image: ${sample_app_image}
-    command: []
+    image: quay.io/freshtracks.io/avalanche:latest
+    command: --port=${sample_app_listen_address_port} --metric-count=${rate} --label-count=10
     ports:
       - ${sample_app_external_port}:${sample_app_listen_address_port}
-    environment:
-      METRICS_LOAD: ${rate}
-      LISTEN_ADDRESS: ${listen_address}
     deploy:
       resources:
         limits:

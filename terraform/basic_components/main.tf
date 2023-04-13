@@ -91,7 +91,7 @@ data "template_file" "otconfig" {
     sample_app_listen_address_host = var.sample_app_listen_address_host
     sample_app_listen_address_port = var.sample_app_listen_address_port
     log_level                      = var.debug ? "debug" : "info"
-    sample_app_instance_id         = var.sample_app_instance_id
+ //   sample_app_instance_id         = var.sample_app_instance_id
 
     mock_endpoint = var.mocked_endpoint
   }

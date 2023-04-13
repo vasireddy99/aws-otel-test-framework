@@ -165,6 +165,7 @@ resource "null_resource" "check_patch" {
 data "template_file" "mocked_server_cert_for_windows" {
   template = file("../../mocked_servers/https/certificates/ssl/certificate.crt")
 }
+
 resource "null_resource" "setup_mocked_server_cert_for_windows" {
   depends_on = [null_resource.check_patch]
   count      = local.selected_ami["family"] == "windows" ? 1 : 0
@@ -340,6 +341,8 @@ resource "null_resource" "install_collector_from_ssm" {
 # Start Sample app and mocked server
 #########################################
 data "template_file" "docker_compose" {
+
+  depends_on = [aws_instance.sidecar]
   template = file(local.docker_compose_path)
 
   vars = {
@@ -353,7 +356,6 @@ data "template_file" "docker_compose" {
     grpc_endpoint                  = "${aws_instance.aoc.private_ip}:${module.common.grpc_port}"
     udp_endpoint                   = "${aws_instance.aoc.private_ip}:${module.common.udp_port}"
     http_endpoint                  = "${aws_instance.aoc.private_ip}:${module.common.http_port}"
-    sample_app_instance_id         = aws_instance.sidecar[0].id
 
     mocked_server_image = local.mocked_server_image
     data_mode           = var.soaking_data_mode
@@ -363,8 +365,8 @@ data "template_file" "docker_compose" {
 }
 
 resource "null_resource" "setup_sample_app_and_mock_server" {
-  count      = var.disable_mocked_server ? 0 : 1
-  depends_on = [null_resource.check_patch]
+  count      = var.disable_mocked_server ? 0 : var.sample_app_instances
+  depends_on = [null_resource.check_patch, aws_instance.sidecar]
   provisioner "file" {
     content     = data.template_file.docker_compose.rendered
     destination = "/tmp/docker-compose.yml"
@@ -384,7 +386,7 @@ resource "null_resource" "setup_sample_app_and_mock_server" {
       "sudo curl -L 'https://github.com/docker/compose/releases/download/1.27.4/docker-compose-Linux-x86_64' -o /usr/local/bin/docker-compose",
       "sudo chmod +x /usr/local/bin/docker-compose",
       "sudo `aws ecr get-login --no-include-email --region ${var.region}`",
-      "sleep 90", // sleep 30s to wait until dockerd is totally set up
+      "sleep 60", // sleep 30s to wait until dockerd is totally set up
       "sudo /usr/local/bin/docker-compose -f /tmp/docker-compose.yml up -d"
     ]
 

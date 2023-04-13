@@ -57,6 +57,7 @@ variable "debug" {
   default = false
 }
 
+/*
 variable "sample_app_instance_id" {
   default = ""
-}
+}*/

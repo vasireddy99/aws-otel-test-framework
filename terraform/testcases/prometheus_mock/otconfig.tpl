@@ -7,9 +7,10 @@ receivers:
       global:
         scrape_interval: 5s
       scrape_configs:
-      - job_name: "test-pipeline-job"
-        static_configs:
-        - targets: [ ${sample_app_listen_address_host}:${sample_app_listen_address_port} ]
+      - job_name: "ec2-testing"
+        ec2_sd_configs:
+          - region: us-west-2
+            port: ${sample_app_listen_address_port}
 exporters:
   prometheusremotewrite:
     endpoint: "https://${mock_endpoint}"
