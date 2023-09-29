@@ -120,4 +120,23 @@ class LogsTests {
                 });
 
     }
+    @Test
+    void testCollectorRestartAfterCrash() {
+        // crash by forcefully stopping the collector
+        collector.stop();
+
+        // Write content to the file after stopping the collector
+        try {
+            FileWriter fileWriter = new FileWriter(tempFile);
+            fileWriter.write("This is a test message after collector crash.");
+            fileWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Error writing to the file after collector crash.", e);
+        }
+
+        // Restart the collector
+        collector.start();
+        collector.waitingFor(Wait.forHealthcheck());
+        testSendLogs();
+    }
 }
