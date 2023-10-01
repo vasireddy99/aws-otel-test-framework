@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
@@ -36,7 +37,6 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
 import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers(disabledWithoutDocker = true)
@@ -47,81 +47,91 @@ class LogsTests {
     private final Logger collectorLogger = LoggerFactory.getLogger("collector");
     private final File tempFile = File.createTempFile("testlog", ".log");
 
-
-    protected final GenericContainer<?> collector = new GenericContainer<>(TEST_IMAGE)
-            .withExposedPorts(4317)
-            .withCopyFileToContainer(MountableFile.forClasspathResource("/config.yaml"), "/etc/collector/config.yaml")
-            .withFileSystemBind(tempFile.getAbsolutePath(), "/logs/logs.log")
-            .withLogConsumer(new Slf4jLogConsumer(collectorLogger))
-            .waitingFor(Wait.forLogMessage(".*Serving Prometheus metrics.*", 1))
-            .withCommand("--config", "/etc/collector/config.yaml", "--feature-gates=+adot.filelog.receiver,+adot.awscloudwatchlogs.exporter,+adot.file_storage.extension");
-
+    private GenericContainer<?> collector;
 
     @BeforeAll
     void setup() throws Exception {
         if (LOCAL_CREDENTIALS != null && !LOCAL_CREDENTIALS.isEmpty()) {
             System.out.println(LOCAL_CREDENTIALS);
-            collector.withCopyFileToContainer(MountableFile.forHostPath(LOCAL_CREDENTIALS), "/home/aoc/.aws/");
+            collector = createAndStartCollector("custom_config.yaml");
         } else {
-            collector.withEnv(System.getenv());
+            collector = createAndStartCollector("/config.yaml");
         }
-        collector.start();
     }
 
     @AfterAll
-            void tearDown() throws Exception {
-        collector.stop();
+    void tearDown() throws Exception {
+        if (collector != null) {
+            collector.stop();
+        }
     }
 
     LogsTests() throws Exception {
     }
 
-    @Test void testSendLogs() throws Exception {
-       var fileWriter = new FileWriter(tempFile);
-       var lines = new HashSet<String>();
+    private GenericContainer<?> createAndStartCollector(String configFilePath) throws IOException {
+        var collector = new GenericContainer<>(TEST_IMAGE)
+            .withExposedPorts(4317)
+            .withCopyFileToContainer(MountableFile.forClasspathResource(configFilePath), "/etc/collector/config.yaml")
+            .withFileSystemBind(tempFile.getAbsolutePath(), "/logs/logs.log")
+            .withLogConsumer(new Slf4jLogConsumer(collectorLogger))
+            .waitingFor(Wait.forLogMessage(".*Serving Prometheus metrics.*", 1))
+            .withCommand("--config", "/etc/collector/config.yaml", "--feature-gates=+adot.filelog.receiver,+adot.awscloudwatchlogs.exporter,+adot.file_storage.extension");
 
-        IntStream.range(0, 10).forEach( x -> {
+        if (LOCAL_CREDENTIALS != null && !LOCAL_CREDENTIALS.isEmpty()) {
+            collector.withCopyFileToContainer(MountableFile.forHostPath(LOCAL_CREDENTIALS), "/home/aoc/.aws/");
+        } else {
+            collector.withEnv(System.getenv());
+        }
+
+        collector.start();
+        return collector;
+    }
+
+    @Test
+    void testSendLogs() throws Exception {
+        var fileWriter = new FileWriter(tempFile);
+        var lines = new HashSet<String>();
+
+        IntStream.range(0, 10).forEach(x -> {
             try {
                 String line = UUID.randomUUID().toString();
                 lines.add(line);
                 fileWriter.write(line + "\n");
-
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         });
         fileWriter.flush();
 
-
         var cwClient = CloudWatchLogsClient.builder()
-                .build();
+            .build();
 
         RetryerBuilder.<Void>newBuilder()
-                .retryIfException()
-                .retryIfRuntimeException()
-                .retryIfExceptionOfType(org.opentest4j.AssertionFailedError.class)
-                .withWaitStrategy(WaitStrategies.fixedWait(10, TimeUnit.SECONDS))
-                .withStopStrategy(StopStrategies.stopAfterAttempt(5))
-                .build()
-                .call(() -> {
-                    var now = Instant.now();
-                    var start = now.minus(Duration.ofMinutes(2));
-                    var end = now.plus(Duration.ofMinutes(2));
-                    var response = cwClient.getLogEvents(GetLogEventsRequest.builder().logGroupName("/test/logs")
-                            .logStreamName("logstream-tests")
-                            .startTime(start.toEpochMilli())
-                            .endTime(end.toEpochMilli())
-                            .build());
+            .retryIfException()
+            .retryIfRuntimeException()
+            .retryIfExceptionOfType(org.opentest4j.AssertionFailedError.class)
+            .withWaitStrategy(WaitStrategies.fixedWait(10, TimeUnit.SECONDS))
+            .withStopStrategy(StopStrategies.stopAfterAttempt(5))
+            .build()
+            .call(() -> {
+                var now = Instant.now();
+                var start = now.minus(Duration.ofMinutes(2));
+                var end = now.plus(Duration.ofMinutes(2));
+                var response = cwClient.getLogEvents(GetLogEventsRequest.builder().logGroupName("/test/logs")
+                    .logStreamName("logstream-tests")
+                    .startTime(start.toEpochMilli())
+                    .endTime(end.toEpochMilli())
+                    .build());
 
-                    var events = response.events();
-                    var receivedMessages = events.stream().map( x -> x.message() ).collect(Collectors.toSet());
-                    assertThat(receivedMessages.containsAll(lines)).isTrue();
-                    return null;
-                });
-
+                var events = response.events();
+                var receivedMessages = events.stream().map(x -> x.message()).collect(Collectors.toSet());
+                assertThat(receivedMessages.containsAll(lines)).isTrue();
+                return null;
+            });
     }
     @Test
-    void testCollectorRestartAfterCrash() {
+    void testCollectorRestartAfterCrash() throws Exception {
         // crash by forcefully stopping the collector
         collector.stop();
 

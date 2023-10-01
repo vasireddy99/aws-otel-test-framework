@@ -1,7 +1,11 @@
 extensions:
   pprof:
     endpoint: 0.0.0.0:1777
-
+  file_storage:
+    directory: /logs/
+    compaction:
+      on_start: true
+      directory: /logs/
 receivers:
   filelog:
     include: [/logs/*.log]
