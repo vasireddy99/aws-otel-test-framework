@@ -1,0 +1,20 @@
+receivers:
+  filelog:
+    include: [/logs/*.log]
+    operators:
+      - type: syslog_parser
+        protocol: rfc5424
+
+exporters:
+  logging:
+    verbosity: detailed
+  awscloudwatchlogs:
+    log_group_name: "/test/logs"
+    log_stream_name: "logstream-rfcsyslog"
+    raw_log: true
+
+service:
+  pipelines:
+    logs:
+      receivers: [filelog]
+      exporters: [logging,awscloudwatchlogs]

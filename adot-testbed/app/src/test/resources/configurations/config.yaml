@@ -28,7 +28,6 @@ exporters:
     log_stream_name: "logstream-tests"
     raw_log: true
 
-
   awsemf:
     log_group_name: "emf-metrics-log-group"
     log_stream_name: "emf-metrics-log-stream"
@@ -51,7 +50,7 @@ service:
     metrics:
       receivers: [prometheus]
       exporters: [awsemf]
-  extensions: [pprof]
+  extensions: [pprof, file_storage]
   telemetry:
     logs:
       level: info

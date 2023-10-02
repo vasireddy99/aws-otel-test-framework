@@ -49,22 +49,7 @@ class LogsTests {
 
     private GenericContainer<?> collector;
 
-    @BeforeAll
-    void setup() throws Exception {
-        if (LOCAL_CREDENTIALS != null && !LOCAL_CREDENTIALS.isEmpty()) {
-            System.out.println(LOCAL_CREDENTIALS);
-            collector = createAndStartCollector("custom_config.yaml");
-        } else {
-            collector = createAndStartCollector("/config.yaml");
-        }
-    }
 
-    @AfterAll
-    void tearDown() throws Exception {
-        if (collector != null) {
-            collector.stop();
-        }
-    }
 
     LogsTests() throws Exception {
     }
@@ -130,8 +115,11 @@ class LogsTests {
                 return null;
             });
     }
+
     @Test
     void testCollectorRestartAfterCrash() throws Exception {
+        collector = createAndStartCollector("/config-storageExtension.yaml");
+        collector.waitingFor(Wait.forHealthcheck());
         // crash by forcefully stopping the collector
         collector.stop();
 
@@ -148,5 +136,39 @@ class LogsTests {
         collector.start();
         collector.waitingFor(Wait.forHealthcheck());
         testSendLogs();
+        collector.stop();
+    }
+
+    @Test
+    void testSyslog() throws Exception {
+        // Write content to the file
+        try {
+            FileWriter fileWriter = new FileWriter(tempFile);
+            fileWriter.write("<165>1 2023-19-22T18:09:11Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut="3" eventSource="Application" eventID="1011"] BOMAn application event log entry...");
+            fileWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Error writing to the file", e);
+        }
+        collector = createAndStartCollector("/config-rfcsyslog.yaml");
+        collector.waitingFor(Wait.forHealthcheck());
+
+        testSendLogs();
+        collector.stop();
+    }
+
+    @Test
+    void testLog4j() throws Exception {
+        try {
+            FileWriter fileWriter = new FileWriter(tempFile);
+            fileWriter.write("[otel.javaagent 2023-09-25 16:56:22:242 +0000] [OkHttp ConnectionPool] DEBUG okhttp3.internal.concurrent.TaskRunner - Q10002 run again after 300 s : OkHttp ConnectionPool");
+            fileWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Error writing to the file ", e);
+        }
+        collector = createAndStartCollector("/config-log4j.yaml");
+        collector.waitingFor(Wait.forHealthcheck());
+
+        testSendLogs();
+        collector.stop();
     }
 }
