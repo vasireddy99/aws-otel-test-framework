@@ -1,6 +1,6 @@
 receivers:
   filelog:
-    include: [/logs/*.log]
+    include: [/logs/RFC5424.log]
     start_at: beginning
     operators:
       - type: syslog_parser

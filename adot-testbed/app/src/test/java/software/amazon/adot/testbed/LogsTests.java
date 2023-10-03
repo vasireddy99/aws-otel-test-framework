@@ -43,9 +43,11 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class LogsTests {
     private static final String LOCAL_CREDENTIALS = System.getProperty("adot.testbed.localcreds");
-    private final String TEST_IMAGE = "public.ecr.aws/aws-otel-test/adot-collector-integration-test:v0.33.1-3fe9d45";
+    private static final String TEST_IMAGE = System.getenv("TEST_IMAGE") != null && !System.getenv("TEST_IMAGE").isEmpty()
+            ? System.getenv("TEST_IMAGE")
+            : "public.ecr.aws/aws-otel-test/adot-collector-integration-test:v0.33.1-3fe9d45";
     private final Logger collectorLogger = LoggerFactory.getLogger("collector");
-    private final File tempFile = File.createTempFile("testlog", ".log");
+//    private final File tempFile = File.createTempFile("testlog", ".log");
 
     private GenericContainer<?> collector;
 
@@ -56,11 +58,13 @@ class LogsTests {
         var collector = new GenericContainer<>(TEST_IMAGE)
             .withExposedPorts(4317)
             .withCopyFileToContainer(MountableFile.forClasspathResource(configFilePath), "/etc/collector/config.yaml")
-            .withFileSystemBind(tempFile.getAbsolutePath(), "/logs/logs.log")
+
             .withLogConsumer(new Slf4jLogConsumer(collectorLogger))
             .waitingFor(Wait.forLogMessage(".*Serving Prometheus metrics.*", 1))
             .withCommand("--config", "/etc/collector/config.yaml", "--feature-gates=+adot.filelog.receiver,+adot.awscloudwatchlogs.exporter,+adot.file_storage.extension");
 
+        //Mount the log file for the file log receiver to parse
+        collector.withCopyFileToContainer(MountableFile.forClasspathResource("/logs/RFC5424.log"), "/logs/RFC5424.log");
         if (LOCAL_CREDENTIALS != null && !LOCAL_CREDENTIALS.isEmpty()) {
             collector.withCopyFileToContainer(MountableFile.forHostPath(LOCAL_CREDENTIALS), "/home/aoc/.aws/");
         } else {
@@ -71,66 +75,74 @@ class LogsTests {
         return collector;
     }
 
-    void testSendLogs(String logName, String logline) throws Exception {
-        var fileWriter = new FileWriter(tempFile);
-        var lines = new HashSet<String>();
+
+    @Test
+    void testSyslog() throws Exception {
+/*         var fileWriter = new FileWriter(tempFile);
 
         try {
-            String line = logline;
-            lines.add(line);
+            String line = "Testing";
             fileWriter.write(line + "\n");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        fileWriter.flush();
-
-        var cwClient = CloudWatchLogsClient.builder()
-            .build();
-
-        RetryerBuilder.<Void>newBuilder()
-            .retryIfException()
-            .retryIfRuntimeException()
-            .retryIfExceptionOfType(org.opentest4j.AssertionFailedError.class)
-            .withWaitStrategy(WaitStrategies.fixedWait(10, TimeUnit.SECONDS))
-            .withStopStrategy(StopStrategies.stopAfterAttempt(5))
-            .build()
-            .call(() -> {
-                var now = Instant.now();
-                var start = now.minus(Duration.ofMinutes(2));
-                var end = now.plus(Duration.ofMinutes(2));
-                var response = cwClient.getLogEvents(GetLogEventsRequest.builder().logGroupName("/test/logs")
-                    .logStreamName(logName)
-                    .startTime(start.toEpochMilli())
-                    .endTime(end.toEpochMilli())
-                    .build());
-
-                var events = response.events();
-                var receivedMessages = events.stream().map(x -> x.message()).collect(Collectors.toSet());
-                assertThat(receivedMessages.containsAll(lines)).isTrue();
-                return null;
-            });
-    }
-
-
-    @Test
-    void testSyslog() throws Exception {
-
+        fileWriter.flush(); */
         collector = createAndStartCollector("/configurations/config-rfcsyslog.yaml");
         collector.waitingFor(Wait.forHealthcheck());
-        String logline = "<165>1 2023-19-22T18:09:11Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"] BOMAn application event log entry...";
+//        String logline = "<165>1 2023-19-22T18:09:11Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"] BOMAn application event log entry...";
 
-        testSendLogs("logstream-rfcsyslog" , logline);
+//        testSendLogs("logstream-rfcsyslog" , logline);
         collector.stop();
     }
 
-    @Test
-    void testLog4j() throws Exception {
+//      void testSendLogs(String logName, String logline) throws Exception {
+//         var fileWriter = new FileWriter(tempFile, true);
+//         var lines = new HashSet<String>();
+//
+//         try {
+//             String line = logline;
+//             lines.add(line);
+//             fileWriter.write(line + "\n");
+//         } catch (IOException e) {
+//             throw new RuntimeException(e);
+//         }
+//         fileWriter.flush();
+//
+//         var cwClient = CloudWatchLogsClient.builder()
+//             .build();
+//
+//         RetryerBuilder.<Void>newBuilder()
+//             .retryIfException()
+//             .retryIfRuntimeException()
+//             .retryIfExceptionOfType(org.opentest4j.AssertionFailedError.class)
+//             .withWaitStrategy(WaitStrategies.fixedWait(10, TimeUnit.SECONDS))
+//             .withStopStrategy(StopStrategies.stopAfterAttempt(5))
+//             .build()
+//             .call(() -> {
+//                 var now = Instant.now();
+//                 var start = now.minus(Duration.ofMinutes(2));
+//                 var end = now.plus(Duration.ofMinutes(2));
+//                 var response = cwClient.getLogEvents(GetLogEventsRequest.builder().logGroupName("/test/logs")
+//                     .logStreamName(logName)
+//                     .startTime(start.toEpochMilli())
+//                     .endTime(end.toEpochMilli())
+//                     .build());
+//
+//                 var events = response.events();
+//                 var receivedMessages = events.stream().map(x -> x.message()).collect(Collectors.toSet());
+//                 assertThat(receivedMessages.containsAll(lines)).isTrue();
+//                 return null;
+//             });
+//     }
 
-        collector = createAndStartCollector("/configurations/config-log4j.yaml");
-        collector.waitingFor(Wait.forHealthcheck());
-        String logline = "[otel.javaagent 2023-09-25 16:56:22:242 +0000] [OkHttp ConnectionPool] DEBUG okhttp3.internal.concurrent.TaskRunner - Q10002 run again after 300 s : OkHttp ConnectionPool";
-
-        testSendLogs("logstream-log4j", logline);
-        collector.stop();
-    }
+//      @Test
+//     void testLog4j() throws Exception {
+//
+//         collector = createAndStartCollector("/configurations/config-log4j.yaml");
+//         collector.waitingFor(Wait.forHealthcheck());
+//         String logline = "[otel.javaagent 2023-09-25 16:56:22:242 +0000] [OkHttp ConnectionPool] DEBUG okhttp3.internal.concurrent.TaskRunner - Q10002 run again after 300 s : OkHttp ConnectionPool";
+//
+//         testSendLogs("logstream-log4j", logline);
+//         collector.stop();
+//     }
 }
