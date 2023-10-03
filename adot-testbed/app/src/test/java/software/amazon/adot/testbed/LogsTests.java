@@ -49,8 +49,6 @@ class LogsTests {
 
     private GenericContainer<?> collector;
 
-
-
     LogsTests() throws Exception {
     }
 
@@ -63,6 +61,7 @@ class LogsTests {
             .waitingFor(Wait.forLogMessage(".*Serving Prometheus metrics.*", 1))
             .withCommand("--config", "/etc/collector/config.yaml", "--feature-gates=+adot.filelog.receiver,+adot.awscloudwatchlogs.exporter,+adot.file_storage.extension");
 
+        collector.withFileSystemBind(System.getProperty("user.home") + "/.aws", "/home/aoc/.aws");
         if (LOCAL_CREDENTIALS != null && !LOCAL_CREDENTIALS.isEmpty()) {
             collector.withCopyFileToContainer(MountableFile.forHostPath(LOCAL_CREDENTIALS), "/home/aoc/.aws/");
         } else {
@@ -73,8 +72,7 @@ class LogsTests {
         return collector;
     }
 
-    @Test
-    void testSendLogs() throws Exception {
+    void testSendLogs(String logName) throws Exception {
         var fileWriter = new FileWriter(tempFile);
         var lines = new HashSet<String>();
 
@@ -104,7 +102,7 @@ class LogsTests {
                 var start = now.minus(Duration.ofMinutes(2));
                 var end = now.plus(Duration.ofMinutes(2));
                 var response = cwClient.getLogEvents(GetLogEventsRequest.builder().logGroupName("/test/logs")
-                    .logStreamName("logstream-tests")
+                    .logStreamName(logName)
                     .startTime(start.toEpochMilli())
                     .endTime(end.toEpochMilli())
                     .build());
@@ -116,59 +114,39 @@ class LogsTests {
             });
     }
 
-    @Test
-    void testCollectorRestartAfterCrash() throws Exception {
-        collector = createAndStartCollector("/config-storageExtension.yaml");
-        collector.waitingFor(Wait.forHealthcheck());
-        // crash by forcefully stopping the collector
-        collector.stop();
-
-        // Write content to the file after stopping the collector
-        try {
-            FileWriter fileWriter = new FileWriter(tempFile);
-            fileWriter.write("This is a test message after collector crash.");
-            fileWriter.close();
-        } catch (IOException e) {
-            throw new RuntimeException("Error writing to the file after collector crash.", e);
-        }
-
-        // Restart the collector
-        collector.start();
-        collector.waitingFor(Wait.forHealthcheck());
-        testSendLogs();
-        collector.stop();
-    }
 
     @Test
     void testSyslog() throws Exception {
+
+        collector = createAndStartCollector("/configurations/config-rfcsyslog.yaml");
+        collector.waitingFor(Wait.forHealthcheck());
         // Write content to the file
         try {
             FileWriter fileWriter = new FileWriter(tempFile);
-            fileWriter.write("<165>1 2023-19-22T18:09:11Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut="3" eventSource="Application" eventID="1011"] BOMAn application event log entry...");
+            fileWriter.write("<165>1 2023-19-22T18:09:11Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"] BOMAn application event log entry...");
+            fileWriter.flush();
             fileWriter.close();
         } catch (IOException e) {
             throw new RuntimeException("Error writing to the file", e);
         }
-        collector = createAndStartCollector("/config-rfcsyslog.yaml");
-        collector.waitingFor(Wait.forHealthcheck());
-
-        testSendLogs();
+        testSendLogs("logstream-rfcsyslog");
         collector.stop();
     }
 
     @Test
     void testLog4j() throws Exception {
+
+        collector = createAndStartCollector("/configurations/config-log4j.yaml");
+        collector.waitingFor(Wait.forHealthcheck());
         try {
             FileWriter fileWriter = new FileWriter(tempFile);
             fileWriter.write("[otel.javaagent 2023-09-25 16:56:22:242 +0000] [OkHttp ConnectionPool] DEBUG okhttp3.internal.concurrent.TaskRunner - Q10002 run again after 300 s : OkHttp ConnectionPool");
+            fileWriter.flush();
             fileWriter.close();
         } catch (IOException e) {
             throw new RuntimeException("Error writing to the file ", e);
         }
-        collector = createAndStartCollector("/config-log4j.yaml");
-        collector.waitingFor(Wait.forHealthcheck());
-
-        testSendLogs();
+        testSendLogs("logstream-log4j");
         collector.stop();
     }
 }

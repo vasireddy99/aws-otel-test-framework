@@ -8,6 +8,7 @@ receivers:
   filelog:
     include: [/logs/*.log]
     encoding: "ascii"
+    storage: file_storage
 
 exporters:
   logging:
