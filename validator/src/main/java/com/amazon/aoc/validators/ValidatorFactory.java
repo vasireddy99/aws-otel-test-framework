@@ -50,6 +50,10 @@ public class ValidatorFactory {
       case "loadbalancing":
         validator = new LoadBalancingValidator();
         break;
+      case "cw-logs":
+        validator = new CWLogValidator();
+        expectedData = validationConfig.getExpectedLogStructureTemplate();
+        break;
       case "cw-metric":
         validator = new CWMetricValidator();
         expectedData = validationConfig.getExpectedMetricTemplate();
