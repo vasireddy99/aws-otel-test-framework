@@ -46,7 +46,7 @@ resource "helm_release" "adot-operator" {
 
   repository = "https://open-telemetry.github.io/opentelemetry-helm-charts"
   chart      = "opentelemetry-operator"
-  version    = "0.63.2"
+  version    = "0.70.0"
   namespace  = "adot-operator-${var.testing_id}-ns"
   wait       = true
   timeout    = 600
