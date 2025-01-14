@@ -19,3 +19,11 @@ clusters:
     launch_type: ec2
     instance_type: m6g.large
     version: "1.27"
+  - name: m6g-arm64-Cluster-1-30
+    launch_type: ec2
+    instance_type: m6g.large
+    version: "1.30"
+  - name: m6g-arm64-Cluster-1-31
+    launch_type: ec2
+    instance_type: m6g.large
+    version: "1.31"
