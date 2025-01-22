@@ -45,6 +45,28 @@ clusters:
   - name: collector-ci-fargate-1-27
     version: "1.27"
     launch_type: fargate
+  - name: collector-ci-arm64-1-28
+    version: "1.28"
+    launch_type: ec2
+    instance_type: m6g.large
+  - name: collector-ci-amd64-1-28
+    version: "1.28"
+    launch_type: ec2
+    instance_type: "m5.large"
+  - name: collector-ci-fargate-1-28
+    version: "1.28"
+    launch_type: fargate
+  - name: collector-ci-arm64-1-29
+    version: "1.29"
+    launch_type: ec2
+    instance_type: m6g.large
+  - name: collector-ci-amd64-1-29
+    version: "1.29"
+    launch_type: ec2
+    instance_type: "m5.large"
+  - name: collector-ci-fargate-1-29
+    version: "1.29"
+    launch_type: fargate
   - name: collector-ci-arm64-1-30
     version: "1.30"
     launch_type: ec2
@@ -136,6 +158,26 @@ clusters:
     cert_manager: true
   - name: operator-ci-arm64-1-27
     version: "1.27"
+    launch_type: ec2
+    instance_type: m6g.large
+    cert_manager: true
+  - name: operator-ci-amd64-1-28
+    version: "1.28"
+    launch_type: ec2
+    instance_type: m5.large
+    cert_manager: true
+  - name: operator-ci-arm64-1-28
+    version: "1.28"
+    launch_type: ec2
+    instance_type: m6g.large
+    cert_manager: true
+  - name: operator-ci-amd64-1-29
+    version: "1.29"
+    launch_type: ec2
+    instance_type: m5.large
+    cert_manager: true
+  - name: operator-ci-arm64-1-29
+    version: "1.29"
     launch_type: ec2
     instance_type: m6g.large
     cert_manager: true
