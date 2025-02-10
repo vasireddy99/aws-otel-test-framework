@@ -13,7 +13,7 @@ processors:
 exporters:
   datadog:
     api:
-      key: testapikey
+      key: abcdef
     metrics:
       endpoint: "https://${mock_endpoint}"
     traces:
