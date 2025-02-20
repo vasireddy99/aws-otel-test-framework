@@ -11,11 +11,9 @@ processors:
   batch:
 
 exporters:
-  logging:
-    verbosity: detailed
   datadog:
     api:
-      key: testapikey
+      key: abcdef
     metrics:
       endpoint: "https://${mock_endpoint}"
 

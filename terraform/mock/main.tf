@@ -23,6 +23,7 @@ locals {
   otconfig_template_path = fileexists("${var.testcase}/otconfig.tpl") ? "${var.testcase}/otconfig.tpl" : module.common.default_otconfig_path
   otconfig_file_path     = "./otconfig.yml"
   docker_compose_path    = "./docker_compose.yml"
+  collector_args         = concat(["--config=/tmp/otconfig.yaml"], var.otconfig_args)
 
   mock_endpoint             = var.mock_endpoint
   sample_app_listen_address = "${module.common.sample_app_listen_address_ip}:${module.common.sample_app_listen_address_port}"
@@ -59,7 +60,7 @@ data "template_file" "docker_compose" {
 
   vars = {
     collector_repo_path            = var.collector_repo_path
-    otconfig_path                  = local.otconfig_file_path
+    collector_args                 = jsonencode(local.collector_args)
     grpc_port                      = module.common.grpc_port
     udp_port                       = module.common.udp_port
     http_port                      = module.common.http_port
@@ -84,9 +85,9 @@ resource "local_file" "write_docker_compose_file" {
 resource "null_resource" "run_docker_compose" {
   provisioner "local-exec" {
     command = <<-EOT
-      docker-compose -f ${local.docker_compose_path} down
-      docker-compose -f ${local.docker_compose_path} build
-      docker-compose -f ${local.docker_compose_path} up -d
+      docker compose -f ${local.docker_compose_path} down
+      docker compose -f ${local.docker_compose_path} build
+      docker compose -f ${local.docker_compose_path} up -d
     EOT
   }
 }

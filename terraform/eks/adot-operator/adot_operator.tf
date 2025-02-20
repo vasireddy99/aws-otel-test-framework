@@ -29,11 +29,27 @@ variable "operator_repository" {
 variable "operator_tag" {
 }
 
+variable "aoc_image_repo" {
+}
+
+variable "aoc_version" {
+}
+
+resource "kubernetes_namespace" "adot_operator_ns" {
+  metadata {
+    name = "adot-operator-${var.testing_id}-ns"
+  }
+}
+
 resource "helm_release" "adot-operator" {
   name = "adot-operator-${var.testing_id}"
 
   repository = "https://open-telemetry.github.io/opentelemetry-helm-charts"
   chart      = "opentelemetry-operator"
+  version    = "0.70.0"
+  namespace  = "adot-operator-${var.testing_id}-ns"
+  wait       = true
+  timeout    = 600
 
   values = [
     file("./adot-operator/adot-operator-values.yaml")
@@ -49,7 +65,15 @@ resource "helm_release" "adot-operator" {
     value = var.operator_tag
   }
 
-  provisioner "local-exec" {
-    command = "kubectl wait --kubeconfig=${var.kubeconfig} --timeout=5m --for=condition=available deployment adot-operator-${var.testing_id}-opentelemetry-operator"
+  set {
+    name  = "manager.collectorImage.tag"
+    value = var.aoc_version
   }
+
+  set {
+    name  = "manager.collectorImage.repository"
+    value = var.aoc_image_repo
+  }
+
+  depends_on = [kubernetes_namespace.adot_operator_ns]
 }

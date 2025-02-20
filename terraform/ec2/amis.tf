@@ -22,7 +22,7 @@ variable "ami_family" {
       otconfig_destination     = "/tmp/ot-default.yml"
       download_command_pattern = "wget %s"
       install_command          = "while sudo fuser /var/cache/apt/archives/lock /var/lib/apt/lists/lock /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend; do echo 'Waiting for dpkg lock...' && sleep 1; done; echo 'No dpkg lock and install collector.' && sudo dpkg -i aws-otel-collector.deb"
-      start_command            = "sudo /opt/aws/aws-otel-collector/bin/aws-otel-collector-ctl -c \"$(echo -n 'CONFIGURATION_URI_PLACEHOLDER' | base64 -d)\" -a start"
+      start_command            = "sudo /opt/aws/aws-otel-collector/bin/aws-otel-collector-ctl -c \"$(echo -n 'CONFIGURATION_URI_PLACEHOLDER' | base64 -d)\" -f -adot.exporter.datadogexporter.deprecation -a start"
       status_command           = "sudo /opt/aws/aws-otel-collector/bin/aws-otel-collector-ctl -a status"
       ssm_validate             = "sudo /opt/aws/aws-otel-collector/bin/aws-otel-collector-ctl -a status | grep running"
       connection_type          = "ssh"
@@ -36,7 +36,7 @@ variable "ami_family" {
       otconfig_destination     = "/tmp/ot-default.yml"
       download_command_pattern = "curl %s --output aws-otel-collector.rpm"
       install_command          = "sudo rpm -Uvh aws-otel-collector.rpm"
-      start_command            = "sudo /opt/aws/aws-otel-collector/bin/aws-otel-collector-ctl -c \"$(echo -n 'CONFIGURATION_URI_PLACEHOLDER' | base64 -d)\" -a start"
+      start_command            = "sudo /opt/aws/aws-otel-collector/bin/aws-otel-collector-ctl -c \"$(echo -n 'CONFIGURATION_URI_PLACEHOLDER' | base64 -d)\" -f -adot.exporter.datadogexporter.deprecation -a start"
       status_command           = "sudo /opt/aws/aws-otel-collector/bin/aws-otel-collector-ctl -a status"
       ssm_validate             = "sudo /opt/aws/aws-otel-collector/bin/aws-otel-collector-ctl -a status | grep running"
       connection_type          = "ssh"
@@ -50,7 +50,7 @@ variable "ami_family" {
       otconfig_destination     = "C:\\ot-default.yml"
       download_command_pattern = "powershell -command \"Invoke-WebRequest -Uri %s -OutFile C:\\aws-otel-collector.msi\""
       install_command          = "msiexec /i C:\\aws-otel-collector.msi"
-      start_command            = "powershell -command \"&{ $url = \\\"$([System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String('CONFIGURATION_URI_PLACEHOLDER')))\\\"; . 'C:\\Program Files\\Amazon\\AwsOtelCollector\\aws-otel-collector-ctl.ps1' -ConfigLocation \\\"$url\\\" -Action start}\""
+      start_command            = "powershell -command \"&{ $url = \\\"$([System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String('CONFIGURATION_URI_PLACEHOLDER')))\\\"; . 'C:\\Program Files\\Amazon\\AwsOtelCollector\\aws-otel-collector-ctl.ps1' -ConfigLocation \\\"$url\\\" -FeatureGates \\\"-adot.exporter.datadogexporter.deprecation\\\" -Action start}\""
       status_command           = "powershell \"& 'C:\\Program Files\\Amazon\\AwsOtelCollector\\aws-otel-collector-ctl.ps1' -Action status\""
       ssm_validate             = "powershell \"& 'C:\\Program Files\\Amazon\\AwsOtelCollector\\aws-otel-collector-ctl.ps1' -Action status\" | findstr running"
       connection_type          = "winrm"
@@ -250,6 +250,34 @@ sudo dpkg -i amazon-ssm-agent.deb
 sudo systemctl enable amazon-ssm-agent
 EOF
     }
+    #AL3
+    amazonlinux3 = {
+      os_family          = "amazon_linux"
+      ami_search_pattern = "al2023-ami-2023*"
+      ami_owner          = "amazon"
+      ami_product_code   = []
+      family             = "linux"
+      arch               = "amd64"
+      login_user         = "ec2-user"
+      user_data          = <<EOF
+#! /bin/bash
+sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+EOF
+    }
+    arm_amazonlinux3 = {
+      os_family          = "amazon_linux"
+      ami_search_pattern = "al2023-ami-2023*"
+      ami_owner          = "amazon"
+      ami_product_code   = []
+      family             = "linux"
+      arch               = "arm64"
+      login_user         = "ec2-user"
+      instance_type      = "c6g.large"
+      user_data          = <<EOF
+#! /bin/bash
+sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_arm64/amazon-ssm-agent.rpm
+EOF
+    }
     #AL2
     amazonlinux2 = {
       os_family          = "amazon_linux"
@@ -328,7 +356,7 @@ EOF
     # Suse Distribution
     suse15 = {
       os_family          = "suse"
-      ami_search_pattern = "suse-sles-15*"
+      ami_search_pattern = "suse-sles-15-sp5-v????????-hvm-ssd-x86_64"
       ami_owner          = "amazon"
       ami_product_code   = []
       family             = "linux"
@@ -345,7 +373,7 @@ EOF
     }
     arm_suse15 = {
       os_family          = "suse"
-      ami_search_pattern = "suse-sles-15*"
+      ami_search_pattern = "suse-sles-15-sp5-v????????-hvm-ssd-arm64"
       ami_owner          = "amazon"
       ami_product_code   = []
       family             = "linux"

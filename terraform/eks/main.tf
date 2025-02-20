@@ -180,6 +180,8 @@ module "adot_operator" {
   kubeconfig          = local_file.kubeconfig.filename
   operator_repository = var.operator_repository
   operator_tag        = var.operator_tag
+  aoc_image_repo      = var.aoc_image_repo
+  aoc_version         = var.aoc_version
 }
 
 
@@ -235,7 +237,7 @@ module "validator" {
     module.adot_operator,
     kubectl_manifest.logs_sample_fargate_deploy,
     null_resource.prom_base_ready_check,
+    kubectl_manifest.aoc_deployment_adot_operator,
     kubernetes_deployment.aoc_deployment,
   ]
 }
-

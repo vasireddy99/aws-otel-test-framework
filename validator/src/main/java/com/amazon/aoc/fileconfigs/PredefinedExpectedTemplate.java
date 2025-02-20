@@ -30,7 +30,6 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   K8S_ATTR_EXPECTED_METRIC("/expected-data-template/k8sExpectedMetric.mustache"),
   ENHANCED_EXPECTED_METRIC_TESTING_ID(
       "/expected-data-template/enhancedExpectedMetricTestingId.mustache"),
-  STATSD_EXPECTED_METRIC("/expected-data-template/statsdExpectedMetric.mustache"),
   STATSD_OTELLIB_EXPECTED_METRIC("/expected-data-template/statsDOtelLibExpectedMetric.mustache"),
   ECS_CONTAINER_EXPECTED_METRIC("/expected-data-template/ecsContainerExpectedMetric.mustache"),
   CONTAINER_INSIGHT_EKS_PROMETHEUS_METRIC(
@@ -77,6 +76,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   CONTAINER_INSIGHT_ECS_LOG("/expected-data-template/container-insight/ecs/ecs-instance"),
   CONTAINER_INSIGHT_ECS_PROMETHEUS_LOG("/expected-data-template/container-insight/ecs/prometheus"),
   CONTAINER_INSIGHT_FARGATE_EKS_LOG("/expected-data-template/container-insight/eks/fargate"),
+  DEFAULT_EXPECTED_LOG("/expected-data-template/otlp/otlp-log.json"),
   ;
 
   private String path;

@@ -4,7 +4,16 @@ import { ec2ClusterInterface } from '../../interfaces/eks/ec2cluster-interface';
 const validateSchema = require('yaml-schema-validator');
 
 const supportedLaunchTypes = new Set(['fargate', 'ec2']);
-const supportedVersions = new Set(['1.22', '1.23', '1.24', '1.25', '1.26']);
+const supportedVersions = new Set([
+  '1.24',
+  '1.25',
+  '1.26',
+  '1.27',
+  '1.28',
+  '1.29',
+  '1.30',
+  '1.31'
+]);
 const supportedCPUArchitectures = new Set(['m5', 'm6g', 't4g']);
 const supportedNodeSizes = new Set([
   'medium',

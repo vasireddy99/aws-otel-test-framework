@@ -331,7 +331,7 @@ data:
           - new_container_memory_hierarchical_pgfault
           - new_container_memory_hierarchical_pgmajfault
 
-      experimental_metricsgeneration/1:
+      metricsgeneration/1:
         rules:
           - name: pod_network_total_bytes
             unit: Bytes/Second
@@ -360,7 +360,7 @@ data:
             operation: divide
             scale_by: 100
 
-      experimental_metricsgeneration/2:
+      metricsgeneration/2:
         rules:
           - name: pod_cpu_utilization_over_pod_limit_${TestingId}
             type: calculate
@@ -429,7 +429,7 @@ data:
               - pod_network_rx_bytes
               - pod_network_tx_bytes
 
-      logging:
+      debug:
         verbosity: detailed
 
     extensions:
@@ -439,6 +439,6 @@ data:
       pipelines:
         metrics:
           receivers: [prometheus]
-          processors: [metricstransform/label_1, resourcedetection, metricstransform/rename, filter, cumulativetodelta, deltatorate, experimental_metricsgeneration/1, experimental_metricsgeneration/2, metricstransform/label_2, batch]
-          exporters: [logging, awsemf]
+          processors: [metricstransform/label_1, resourcedetection, metricstransform/rename, filter, cumulativetodelta, deltatorate, metricsgeneration/1, metricsgeneration/2, metricstransform/label_2, batch]
+          exporters: [debug, awsemf]
       extensions: [health_check]

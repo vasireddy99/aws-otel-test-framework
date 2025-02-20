@@ -11,20 +11,18 @@ processors:
   batch:
 
 exporters:
-  logging:
-    verbosity: detailed
-  dynatrace:
-    api_token: mytoken
-    endpoint: "https://${mock_endpoint}"
+  awscloudwatchlogs:
+    log_group_name: "/aws/ecs/otlp/${testing_id}/logs"
+    log_stream_name: "otlp-logs"
+    region: ${region}
 
 service:
   pipelines:
-    metrics:
+    logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [dynatrace]
+      exporters: [awscloudwatchlogs]
   extensions: [pprof]
   telemetry:
     logs:
       level: ${log_level}
-
