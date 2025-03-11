@@ -68,7 +68,7 @@ variable "install_package_source" {
 
 # use this parameter when install_package_source is local
 variable "install_package_local_path" {
-  default = "../../../aws-otel-collector/build/packages/linux/amd64/aws-otel-collector.rpm"
+  default = "../../../aws-otel-collector/build/packages/windows/amd64/aws-otel-collector.msi"
 }
 
 variable "testing_type" {
@@ -76,7 +76,7 @@ variable "testing_type" {
 }
 
 variable "patch" {
-  default = true
+  default = false
 }
 
 variable "kafka_version" {
